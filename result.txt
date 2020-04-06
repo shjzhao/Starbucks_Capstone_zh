@@ -1,0 +1,1 @@
+{'offer_completed': 1, 'viewed_before_completed': 0}

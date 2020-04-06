@@ -58,8 +58,30 @@
 
 # 数据分析与模型建立
 
-请查看Starbucks_Capstone_notebook-zh.ipynb，详细记录了数据分析和模型建立的过程。
+请查看[Starbucks_Capstone_notebook-zh.ipynb](,/Starbucks_Capstone_notebook-zh.ipynb)，
+详细记录了数据分析和模型建立的过程。
+
+###  结果讨论
+
+1. k邻近、随机森林和adaboost三种算法准确率相差不大，可能主要因为数据量不大的原因。
+三种算法中使用adaboost算法得到的精度在3种分类器中最高，为77.2%。
+[Adaboost](https://scikit-learn.org/stable/modules/ensemble.html#adaboost)是一种集成方法。集成方法的目标是将使用给定学习算法构建的几个基本分类器的预测结合起来，以提高单个分类器的通用性/鲁棒性。通常有两种集成方法：1.平均方法，原理是独立建立多个分类器，然后平均其预测。平均而言，由于组合分类器的方差减小了，因此组合分类器通常比任何单个基础分类器都要好，随机森林法属于该类。2.增强方法，基本分类器是按顺序构建一系列分类器，然后尝试减小组合分类器的偏差。这样做的动机是将几个弱分类器结合起来以产生一个强大的整体，adaboost属于该类。AdaBoost的核心原则是构建一系列弱分类器，这些弱分类器比随机猜测仅仅稍微好一点(如小决策树)。在每次迭代中不断更新权重，然后通过加权多数投票(或求和)将所有预测组合起来，得出最终预测。
+
+2. 使用网格搜索得出了最优参数{'clf__estimator__learning_rate': 1.0, 'clf__estimator__n_estimators': 300}。
+
+3. 限于时间和机器性能，没有进行更多尝试，后续可以尝试更多不同算法，以比对时间花销和精度。
+
+4. 关于算法选择，sklearn提供了一个[cheatsheet](https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html)值得参考。
+
+5. 后续可以继续研究顾客消费金额同用户信息和推送信息间的关系，来预测不同顾客的消费金额和推送对消费金额的影响。
 
 # 应用程序
-
-在命令行中使用 python predict.py demo.json 命令，即可输出demo.json中的顾客对于推送的预测结果
+### 预测
+在input.json中包含一名顾客的信息，在命令行中使用python run.py model.pickle input.json result.txt
+命令，即可使用model.pickle中保存的模型，预测input.json中的顾客对于推送的预测结果，并将结果保存到result.txt中。
+### 数据处理
+原始数据处理可使用命令python process_data.py data/ data/cleaned_data.pickle，即可处理data文件夹中的portfolio.json 
+、profile.json 、transcript.json文件，并将清理好的数据保存到data文件夹下的cleaned_data.pickle文件中。
+### 训练模型
+可使用命令python train_classifier.py ./data/clean_data.pickle model.pickle，即可使用data文件夹中处理好的
+数据clean_data.pickle训练模型，并将模型保存至model.pickle文件中。

@@ -112,7 +112,7 @@ def main():
               'run.py model.pickle input.json result.txt')
         model_filepath = 'model.pickle'
         input_filepath = 'input.json'
-        result_filepath = 'result.json'
+        result_filepath = 'result.txt'
 
     x = load_data(input_filepath)
     results = predict_results(model_filepath, x)

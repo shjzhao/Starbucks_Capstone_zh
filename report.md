@@ -332,38 +332,79 @@ transcript中有306534*4条数据。
 
 ### 2 创建机器学习管道
 * 使用MinMaxScaler()，将数值缩放到0~1范围内
-* 创建多目标分类器，并使用k邻近算法。
+* 创建多目标分类器，并使用k邻近算法。关于算法选择，sklearn提供了一个[cheatsheet](https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html)值得参考。
+![Choosing the right estimator](https://scikit-learn.org/stable/_static/ml_map.png)
 
 ### 3 训练管道
 * 将数据分割成训练和测试集
 * 训练管道
 
 ### 4 测试模型
-报告数据集中每个输出类别的 f1 得分、准确度和召回率。
+报告输出测试集的准确率（accuracy）和每个输出类别的、精确度(precision)、召回率（recall）及f1分数(F1_score)，作为评价指标。
+
+* 混淆矩阵
+
+![混淆矩阵](./imgs/confusion_matrix.png '混淆矩阵')
+
+* 准确率 
+
+accuracy = (TP + TN)/(TP + FP + FN + TN)
+
+准确率的定义是预测正确的结果占总样本的百分比。
+
+* 精确度 
+
+Precision = TP/(TP + FP)
+
+又叫查准率，是在所有被预测为正的样本中实际为正的样本的概率。
+
+* 召回率
+
+recall = TP/(TP + FN)
+
+又叫查全率，是在实际为正的样本中被预测为正样本的概率。
+
+* F1分数
+
+F1_score = 2 * (precision * recall) / (precision + recall)
+
+是统计中用来衡量二分类模型精确度的一种指标。F1 = 2 * (precision * recall) / (precision + recall)。它同时兼顾了分类模型的精确率和召回率。F1分数可以看作是模型精确率和召回率的一种调和平均，它的最大值是1，最小值是0。F1分数认为召回率和准确率同等重要。
+
+结果如下：
+
+![linearSVC1](./imgs/linearSVC1.png 'linearSVC1')
+
 
 ### 5 优化模型
-使用网格搜索来找到最优的参数组合。
+使用网格搜索来找到最优的参数组合。选择参数如下：{'clf__estimator__dual': [True, False],
+    'clf__estimator__tol': [1e-3, 1e-4, 1e-5],    'clf__estimator__C':[0.8, 1, 1.2]}。
+
+dual:  布尔值。如果为true，则解决对偶问题；如果是false，则解决原始问题。当n_samples>n_features时，倾向于采用false
+
+tol: 指定终止迭代的阈值
+
+C: 错误项的惩罚参数(default=1.0)
 
 ### 6 再次测试模型
-报告数据集中每个输出类别的 f1 得分、准确度和召回率。
+报告输出测试集的正确率（accuracy）和每个输出类别的、精确度(precision)、召回率（recall）及f1分数(F1_score)。模型效果无变化。
+
+![linearSVC2](./imgs/linearSVC2.png 'linearSVC2')
 
 ### 7 尝试更多算法
-使用随机森林和adaboost算法并使用网格搜索寻找最优参数。
+使用了k近邻、随机森林和adaboost算法并使用网格搜索寻找最优参数，效果同linearSVC相似，但计算效率明显更低。详见[Starbucks_Capstone_notebook-zh.ipynb](./Starbucks_Capstone_notebook-zh.ipynb)
 
 
 ##  结果讨论
 
-1. k邻近、随机森林和adaboost三种算法准确率相差不大，可能主要因为数据量不大的原因。
-三种算法中使用adaboost算法得到的精度在3种分类器中最高，为77.2%。
-[Adaboost](https://scikit-learn.org/stable/modules/ensemble.html#adaboost)是一种集成方法。集成方法的目标是将使用给定学习算法构建的几个基本分类器的预测结合起来，以提高单个分类器的通用性/鲁棒性。通常有两种集成方法：1.平均方法，原理是独立建立多个分类器，然后平均其预测。平均而言，由于组合分类器的方差减小了，因此组合分类器通常比任何单个基础分类器都要好，随机森林法属于该类。2.增强方法，基本分类器是按顺序构建一系列分类器，然后尝试减小组合分类器的偏差。这样做的动机是将几个弱分类器结合起来以产生一个强大的整体，adaboost属于该类。AdaBoost的核心原则是构建一系列弱分类器，这些弱分类器比随机猜测仅仅稍微好一点(如小决策树)。在每次迭代中不断更新权重，然后通过加权多数投票(或求和)将所有预测组合起来，得出最终预测。
+1. 四种算法准确率、精度、召回率和F1分数相差不大，使用linearSVC算法得到的准确率在3种分类器中最高，可能主要因为数据量不大的原因。随机森林法和[Adaboost](https://scikit-learn.org/stable/modules/ensemble.html#adaboost)都是集成方法。集成方法的目标是将使用给定学习算法构建的几个基本分类器的预测结合起来，以提高单个分类器的通用性/鲁棒性。通常有两种集成方法：1.平均方法，原理是独立建立多个分类器，然后平均其预测。平均而言，由于组合分类器的方差减小了，因此组合分类器通常比任何单个基础分类器都要好，随机森林法属于该类。2.增强方法，基本分类器是按顺序构建一系列分类器，然后尝试减小组合分类器的偏差。这样做的动机是将几个弱分类器结合起来以产生一个强大的整体，adaboost属于该类。AdaBoost的核心原则是构建一系列弱分类器，这些弱分类器比随机猜测仅仅稍微好一点(如小决策树)。在每次迭代中不断更新权重，然后通过加权多数投票(或求和)将所有预测组合起来，得出最终预测。
 
-2. 使用网格搜索得出了最优参数{'clf__estimator__learning_rate': 1.0, 'clf__estimator__n_estimators': 300}。
+2. 使用网格搜索得出了最优参数{'clf__estimator__C': 0.8, 'clf__estimator__dual': False, 'clf__estimator__tol': 0.001}。
 
-3. 限于时间和机器性能，没有进行更多尝试，后续可以尝试更多不同算法，以比对时间花销和精度。
+3. 关于算法选择，sklearn提供了一个[cheatsheet](https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html)值得参考。
 
-4. 关于算法选择，sklearn提供了一个[cheatsheet](https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html)值得参考。
+4. 项目中遇到的困难：限于机器性能，每一次模型拟合时间都较长，限于时间，没有进行更多尝试，模型精度还有提高的空间。后续可以尝试更多不同算法，以比对时间花销和精度。
 
-5. 后续可以继续研究顾客消费金额同用户信息和推送信息间的关系，来预测不同顾客的消费金额和推送对消费金额的影响。
+5. 项目中有趣的地方：通过数据分析，发现了很多有意思的用户行为，许多顾客没有看到推送的内容依然完成了推送的促销活动，同时在没有收到促销的时候也有消费行为。后续可以继续研究顾客消费金额同用户信息和推送信息间的关系，来预测不同顾客的消费金额和推送对消费金额的影响。
 
 ## 应用程序
 ### 预测
@@ -374,3 +415,11 @@ transcript中有306534*4条数据。
 、profile.json 、transcript.json文件，并将清理好的数据保存到data文件夹下的cleaned_data.pickle文件中。
 ### 训练模型
 可使用命令python train_classifier.py ./data/clean_data.pickle model.pickle，即可使用data文件夹中处理好的数据clean_data.pickle训练模型，并将模型保存至model.pickle文件中。
+
+## 参考文献
+
+* [Supervised learning in sklearn](https://scikit-learn.org/stable/supervised_learning.html#supervised-learning)
+* [Beyond Accuracy: Precision and Recall](https://towardsdatascience.com/beyond-accuracy-precision-and-recall-3da06bea9f6c)
+* [Wikipedia entry for the F1-score](https://en.wikipedia.org/wiki/F1_score)
+* Y. Freund, R. Schapire, “A Decision-Theoretic Generalization of on-Line Learning and an Application to Boosting”, 1995.
+* [机器学习算法选择cheatsheet](https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html)

@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.multioutput import MultiOutputClassifier
-from sklearn.ensemble import  AdaBoostClassifier
+from sklearn.svm import LinearSVC
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report
@@ -38,12 +38,13 @@ def build_model():
     """
     pipeline = Pipeline([
         ('scaler', MinMaxScaler()),
-        ('clf', MultiOutputClassifier(AdaBoostClassifier()))
+        ('clf', MultiOutputClassifier(LinearSVC()))
     ])
 
     parameters = {
-        'clf__estimator__n_estimators': [100, 200, 300],
-        'clf__estimator__learning_rate': [0.8, 0.9, 1.0]
+        'clf__estimator__dual': [True, False],
+        'clf__estimator__tol': [1e-3, 1e-4, 1e-5],
+        'clf__estimator__C': [0.8, 1, 1.2]
     }
 
     cv = GridSearchCV(pipeline, param_grid=parameters)

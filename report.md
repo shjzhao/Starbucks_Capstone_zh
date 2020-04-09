@@ -376,17 +376,132 @@ F1_score = 2 * (precision * recall) / (precision + recall)
 
 
 ### 5 优化模型
-使用网格搜索来找到最优的参数组合。选择参数如下：{'clf__estimator__dual': [True, False],
-    'clf__estimator__tol': [1e-3, 1e-4, 1e-5],    'clf__estimator__C':[0.8, 1, 1.2]}。
+使用网格搜索（GridSearchCV）来找到最优的参数组合。网格搜索在所有候选的参数选择中，通过循环遍历，尝试每一种可能性，最终找到最优的一组参数。同时使用了cross validation来减少因初始数据划分不同而产生的结果的偶然性。
 
-dual:  布尔值。如果为true，则解决对偶问题；如果是false，则解决原始问题。当n_samples>n_features时，倾向于采用false
+先查看pipeline中所有的参数项：
 
-tol: 指定终止迭代的阈值
+```
+{'memory': None,
+ 'steps': [('scaler', MinMaxScaler(copy=True, feature_range=(0, 1))),
+  ('clf',
+   MultiOutputClassifier(estimator=LinearSVC(C=1.0, class_weight=None, dual=True, fit_intercept=True,
+        intercept_scaling=1, loss='squared_hinge', max_iter=1000,
+        multi_class='ovr', penalty='l2', random_state=None, tol=0.0001,
+        verbose=0),
+              n_jobs=1))],
+ 'scaler': MinMaxScaler(copy=True, feature_range=(0, 1)),
+ 'clf': MultiOutputClassifier(estimator=LinearSVC(C=1.0, class_weight=None, dual=True, fit_intercept=True,
+      intercept_scaling=1, loss='squared_hinge', max_iter=1000,
+      multi_class='ovr', penalty='l2', random_state=None, tol=0.0001,
+      verbose=0),
+            n_jobs=1),
+ 'scaler__copy': True,
+ 'scaler__feature_range': (0, 1),
+ 'clf__estimator__C': 1.0,
+ 'clf__estimator__class_weight': None,
+ 'clf__estimator__dual': True,
+ 'clf__estimator__fit_intercept': True,
+ 'clf__estimator__intercept_scaling': 1,
+ 'clf__estimator__loss': 'squared_hinge',
+ 'clf__estimator__max_iter': 1000,
+ 'clf__estimator__multi_class': 'ovr',
+ 'clf__estimator__penalty': 'l2',
+ 'clf__estimator__random_state': None,
+ 'clf__estimator__tol': 0.0001,
+ 'clf__estimator__verbose': 0,
+ 'clf__estimator': LinearSVC(C=1.0, class_weight=None, dual=True, fit_intercept=True,
+      intercept_scaling=1, loss='squared_hinge', max_iter=1000,
+      multi_class='ovr', penalty='l2', random_state=None, tol=0.0001,
+      verbose=0),
+ 'clf__n_jobs': 1}
+```
 
-C: 错误项的惩罚参数(default=1.0)
+选择estimator LinearSVC中的参数进行优化，注意网格搜索采用的是穷举法，其计算复杂度将随需要优化的超参数规模呈指数增长。因此要注意控制参数数量。LinearSVC参数如下：
+
+* penalty(str) ‘l1’ or ‘l2’ (default=’l2’).惩罚项，L1或L2范数，LinearSVC中默认使用L2，用于防止过拟合。
+
+* loss(str), ‘hinge’ or ‘squared_hinge’ (default=’squared_hinge’).损失函数，hinge”是标准的SVM损失函数，默认使用’squared_hinge’即’hinge'的平方。
+
+* dual(bool), (default=True).如果为true，则求解对偶问题。如果为false，解决原始问题。当样本数量>特征数量时，倾向采用解原始问题。
+
+* tol(float), optional (default=1e-4).停止迭代的tolerance阈值。
+
+* C(float), optional (default=1.0).正则化系数，越大惩罚力度越大。
+
+* multi_class(str), ‘ovr’ or ‘crammer_singer’ (default=’ovr’).多分类问题的策略。'ovr': 采用one-vs-rest分类策略；'crammer_singer': 多类联合分类，很少用。因为计算量大，而且精度不会更佳，此时忽略loss,penalty,dual参数
+
+* fit_intercept(bool), optional (default=True).是否计算此模型的截距。 如果设置为false，则不会在计算中使用截距（即，预期数据已经居中）。
+
+* intercept_scaling(float), optional (default=1).当fit_intercept为True时，实例向量x变为[x, intercept_scaling]。
+
+* class_weight{dict, ‘balanced’}, optional.不同类别的权重。如果是'balanced'，则每个类的权重是它出现频率的倒数。
+
+* verbose(int), (default=0).是否启用详细输出，优化中我们不启用。
+
+* random_state(int), optional (default=None). 用于打乱数据的随机数种子。优化中我们不指定该参数。
+
+* max_iter(int), (default=1000).最大迭代次数。会影响模型精度和计算时间。
+
+
+第一轮选择参数如下：
+```
+parameters = {
+    'clf__estimator__dual': [True, False],
+    'clf__estimator__tol': [1e-4],
+    'clf__estimator__C':[0.8, 1, 1.2],
+    'clf__estimator__max_iter': [3e3]
+}
+```
+
+第一轮输出的最佳参数如下：
+```
+{'clf__estimator__C': 0.8,
+ 'clf__estimator__dual': True,
+ 'clf__estimator__max_iter': 3000.0,
+ 'clf__estimator__tol': 0.0001}
+ ```
+
+第二轮选择参数如下：
+```
+parameters = {
+    'clf__estimator__dual': [True, False],
+    'clf__estimator__tol': [1e-4],
+    'clf__estimator__C':[0.3, 0.5, 0.8],
+    'clf__estimator__max_iter': [3e3]
+}
+```
+第二轮输出的最佳参数如下：
+```
+{'clf__estimator__C': 0.8, 
+ 'clf__estimator__dual': True, 
+ 'clf__estimator__max_iter': 10000.0, 
+ 'clf__estimator__tol': 1e-05}
+```
+
+第三轮选择参数如下：
+```
+parameters = {
+    'clf__estimator__dual': [True, False],
+    'clf__estimator__tol': [1e-5],
+    'clf__estimator__C':[1],
+    'clf__estimator__max_iter': [1e4],
+    'clf__estimator__class_weight':[None, 'balanced'],
+    'clf__estimator__fit_intercept':[True, False]
+}
+```
+第三轮输出的最佳参数如下：
+```
+{'clf__estimator__C': 1, 
+ 'clf__estimator__class_weight': None,
+ 'clf__estimator__dual': True,
+ 'clf__estimator__fit_intercept': True,
+ 'clf__estimator__max_iter': 10000.0,
+ 'clf__estimator__tol': 1e-05}
+```
+
 
 ### 6 再次测试模型
-报告输出测试集的正确率（accuracy）和每个输出类别的、精确度(precision)、召回率（recall）及f1分数(F1_score)。模型效果无变化。
+报告输出测试集的正确率（accuracy）和每个输出类别的、精确度(precision)、召回率（recall）及f1分数(F1_score)。模型效果无明显变化。
 
 ![linearSVC2](./imgs/linearSVC2.png 'linearSVC2')
 
